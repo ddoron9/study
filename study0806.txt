@@ -1,0 +1,17 @@
+
+
+activation function 지정 안하면 linear > 층이 깊어진다고는 볼 수 없음
+이진 분류 > 주로 relu(요즘은 elu) 최종 output layer 에 sigmoid 적용 / binary_crossentropy 
+다중 분류 > 주로 relu 최종 softmax / categorical_crossentropy 
+선형회귀 > dense에 linear사용시 fully connect 되어 wx+b 연산이 진행이 되므로 총파라미터 수는 output 의 dim*( input dim + 1 ) == parameter 수 / mse 사용 / 출력단에 sigmoid 넣으면 로지스틱회귀 
+
+cross validation with k > train set에서 k개로 나눠 1개는 validation k-1개는 train을 하는데, validation data를 매번 바꿔 k 번 진행하는 학습 방식(데이터 절약)
+
+학습의 질을 결정하는 척도는 acc가 아닌 loss > 이유는 loss 자체가 y_label - y_predict 이므로 이상적인 값과의 차이를 구하기 때문
+ 
+value = model.evaluate(x, y)
+'''
+value = [loss, acc]
+'''
+   
+PCA 열 개수 줄이기 > 줄면 좋은 점 > 계산 적어짐 
