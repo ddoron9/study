@@ -1,0 +1,242 @@
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys 
+from bs4 import BeautifulSoup 
+from urllib.request import urlopen
+from selenium.common import exceptions
+import pyautogui
+import requests
+import time  
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
+# import pandas as pdt
+import pyautogui
+import requests 
+import matplotlib.pyplot as plt
+from matplotlib import font_manager,rc
+from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import NoSuchElementException
+ 
+
+def title_link(keyword):
+    
+
+    driver = webdriver.Chrome("./chromedriver.exe")
+    driver.implicitly_wait(1)
+    
+    url = "https://m.search.naver.com/search.naver?sm=mtb_hty.top&where=m_news"
+    
+    driver.get(url)
+    search_box = driver.find_element_by_id("nx_query") #검색창 선택 (choose search_box)
+    search_box.send_keys(keyword) #검색창에 검색어(keyword)입력 (send keyword to search_box)
+    pyautogui.press('enter') #press enter
+    
+
+    
+    html = driver.page_source #옮긴 페이지 가져오고
+    bs = BeautifulSoup(html,'html.parser') #문서파싱 ; in for loop-page마다 파싱이 이뤄져야함
+    time.sleep(3)
+    div = bs.find("div", {"class":"group_news"})
+    time.sleep(3)
+    divList = div.findAll("div",{"class" : "news_wrap"} )
+    
+    titles_links = {} #dict {title:link}
+    num = 0
+    for di in divList:
+        string = str(di.find("a",{"class":"news_tit"}))
+        #link
+        link = string[string.find("https"):string.find("onclick")]
+        link = link.replace('amp;','')
+        link = link[0:-2]
+        
+        #title
+        title = string[string.find(keyword):string.find("</div> </a>")]
+        title = title.replace("</b>","")
+        
+        #put in dict
+        titles_links[title]=link
+        num += 1
+        if num > 4 : 
+            break
+    return titles_links
+
+
+
+
+
+def comment(dic):  
+    lst = [] #댓글 담을 list
+    for url in dic.values():
+        
+        driver = webdriver.Chrome('./chromedriver') 
+        driver.get(url) #url 읽기       
+        
+        driver.implicitly_wait(1) 
+        
+        body = driver.find_element_by_css_selector('body')
+
+        time.sleep(5)
+        try : #엑박
+            driver.find_element_by_css_selector('#channelRecommendLayer > div > button').click()
+        except NoSuchElementException as e:
+            print(e)
+
+        try:    
+            body.find_element_by_class_name('u_cbox_btn_view_comment').click()
+        except ElementNotInteractableException as e:#댓글이 없을 때
+            print(e)
+            return 
+        pages = 0 # 한 페이지당 약 20개의 댓글이 표시
+        try:
+            while True: # 댓글 페이지가 몇개인지 모르므로.
+                 
+                #body.send_keys(Keys.PAGE_UP)
+                try:
+                    body.find_element_by_css_selector(".u_cbox_btn_more").click()
+                    time.sleep(1.5)
+                    print(pages, end=" ")
+                    pages+=1
+                except StaleElementReferenceException as e: #댓글이 20개 이하일 때 
+                    print(e)
+                    break
+                
+                    
+        except exceptions.ElementNotVisibleException as e: # 페이지 끝
+            pass
+ 
+        html = driver.page_source
+        dom = BeautifulSoup(html, "lxml")
+
+        # 댓글이 들어있는 페이지 전체 크롤링
+        comments_raw = dom.find_all("span", {"class" : "u_cbox_contents"})
+
+        # 댓글의 text만 뽑는다.
+        comments = [comment.text for comment in comments_raw]
+        lst.extend(comments) 
+    return lst
+
+
+ 
+#로엘 법무법인
+def llcri(keyword):
+  
+    driver = webdriver.Chrome("./chromedriver.exe")
+    driver.implicitly_wait(1)
+
+    url = 'http://www.llcri.com/succession/index.php'
+    
+    driver.get(url)
+     
+    search_box = driver.find_element_by_name("stx") #사건 번호로 검색하고 싶을 때
+    
+    # 검색창에 검색어(keyword)입력 (send keyword to search_box)
+    search_box.send_keys(keyword)
+    pyautogui.press('enter')  # press enter
+
+    html = driver.page_source  # 옮긴 페이지 가져오고
+    # 문서파싱 ; in for loop-page마다 파싱이 이뤄져야함
+    bs = BeautifulSoup(html, 'html.parser')
+
+    table = bs.find("div",{'id':'blist'} )   
+    table = table.find('tbody')
+    trList = table.findAll("tr" ) 
+    case = []  
+    
+    for tr in trList:  
+        lst = []
+        List = tr.findAll("td") 
+        for td in List: 
+            td = td.text.strip()
+            if td.find('\n') != -1:
+                td = td[:td.find('\n')]
+            if td.find('\t') != -1:
+                td = td[:td.find('\t')]
+            lst.append(td)  
+            
+        if len(lst)>0:
+            case.append(lst[1:])
+   
+    return case 
+
+
+#Yk 법무법인 형사센터
+def ykcri(keyword):
+ 
+
+    driver = webdriver.Chrome("./chromedriver.exe")
+    driver.implicitly_wait(1)
+
+    url = 'http://www.yklaw.net/deteg/success/'
+    
+    driver.get(url)
+    
+    body = driver.find_element_by_css_selector('body')
+
+    body.send_keys(Keys.PAGE_DOWN)
+    search_box = driver.find_element_by_css_selector("#stx") #사건 번호로 검색하고 싶을 때
+    
+    # 검색창에 검색어(keyword)입력 (send keyword to search_box)
+    search_box.send_keys(keyword)
+    pyautogui.press('enter')  # press enter
+
+    html = driver.page_source  # 옮긴 페이지 가져오고
+    # 문서파싱 ; in for loop-page마다 파싱이 이뤄져야함
+    bs = BeautifulSoup(html, 'html.parser')
+    table = bs.find('tbody') 
+#     table = bs.find('div',{'class':'container sucess_c'}) 
+#     print(table,'$$$$$$$$$$$$$44')
+    trList = bs.findAll("tr" ) 
+    case = []  
+     
+    for tr in trList:  
+        lst = tr.text.strip('\n').split()   
+        
+        if lst[1]!='분류':
+            case.append(lst[1:])
+     
+    return case 
+
+
+def count(case):
+    
+     
+    dic = {}
+    
+    txts = '''감형 소년법 감형/원심파기 불구속구공판 기소유예 혐의없음 내사종결 공소권없음 
+             기소의견송치 소년보호사건송치 공소권변경 구속영장청구기각 선고유예 불기소의견송치 
+             약식벌금 무죄  벌금형 혐의없음(증거불충분) 공소기각 기타 구속영장기각 및 보석'''
+    txts = txts.split()
+    text = []
+    for c in case:
+        # 소년법 카테고리 
+        if c[0][0] == '소':
+            c[0] = '소년법'
+        text.append(c[0])
+    for txt in txts :
+        #0이 아닌 값만 딕셔너리 추가
+        if text.count(txt) != 0:
+            dic[txt] = text.count(txt)  
+    #경로지정
+    font_path ='C:/Windows/Fonts/batang.ttc'
+    #폰트 이름 얻어오기
+    font_name = font_manager.FontProperties(fname=font_path).get_name()
+    #font 설정
+    rc('font',family=font_name)
+    #글씨 크기 
+    plt.rcParams['font.size'] = 25
+    plt.figure(figsize=(30, 10))
+    plt.title('success chart')
+    plt.bar(dic.keys(),dic.values())
+    plt.show()
+    pic = 'image'+time.strftime('%H%M%S')+'.png'
+    plt.savefig(pic)
+    return pic
+
+keyword = input("키워드를 입력하세요 : ")
+dic = title_link(keyword) 
+print(comment(dic))
+
+yk =ykcri(keyword) #Yk
+count(yk)
+case =llcri(keyword) #로엘
+count(case) 
