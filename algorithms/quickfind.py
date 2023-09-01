@@ -1,6 +1,6 @@
 
 
-class UnionFind:
+class QuickFind:
     def __init__(self, n):
         self.root = [i for i in range(n)]
 
@@ -20,7 +20,7 @@ class UnionFind:
 
 
 if __name__=="__main__":
-    uf = UnionFind(10)
+    uf = QuickFind(10)
     uf.union(1,2)
     print(uf.root)
     uf.union(4,6)
